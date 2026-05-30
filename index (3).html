@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle Semanal — Equipe CNC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{--bg:#f7f6f3;--surface:#fff;--surface2:#f0ede8;--border:rgba(0,0,0,0.08);--border-s:rgba(0,0,0,0.16);--text:#1a1917;--muted:#6b6860;--hint:#a8a49d;--accent:#1a1917;--green:#0e7c4a;--green-l:#e6f4ee;--amber:#92400e;--amber-l:#fef3c7;--red:#991b1b;--red-l:#fee2e2;--blue:#1a56db;--blue-l:#e8f0fe;--r:10px;--rl:14px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.shell{display:flex;min-height:100vh}
+/* SIDEBAR */
+.sb{width:220px;background:var(--surface);border-right:1px solid var(--border);padding:20px 0;display:flex;flex-direction:column;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sb-logo{padding:0 18px 18px;border-bottom:1px solid var(--border);margin-bottom:12px}
+.sb-logo h1{font-size:13px;font-weight:500;line-height:1.4}
+.sb-logo p{font-size:11px;color:var(--muted);margin-top:2px;font-family:'DM Mono',monospace}
+.nav{list-style:none;padding:0 8px}
+.nav li{margin-bottom:2px}
+.nb{width:100%;background:transparent;border:none;border-radius:var(--r);padding:8px 12px;display:flex;align-items:center;gap:9px;font-size:13px;color:var(--muted);cursor:pointer;text-align:left;font-family:'DM Sans',sans-serif;transition:all .15s}
+.nb i{font-size:16px;flex-shrink:0}
+.nb:hover{background:var(--surface2);color:var(--text)}
+.nb.active{background:var(--accent);color:#fff}
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:11px 22px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.sync{font-size:11px;font-family:'DM Mono',monospace;padding:3px 8px;border-radius:5px;display:inline-flex;align-items:center;gap:5px}
+.sync.ok{background:var(--green-l);color:var(--green)}
+.sync.err{background:var(--red-l);color:var(--red)}
+.sync.loading{background:var(--blue-l);color:var(--blue)}
+.wnav{display:flex;align-items:center;gap:6px}
+.wlbl{font-size:13px;font-weight:500;font-family:'DM Mono',monospace;min-width:148px;text-align:center}
+.wnav button{background:transparent;border:1px solid var(--border-s);border-radius:8px;padding:4px 9px;cursor:pointer;color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;transition:background .15s}
+.wnav button:hover{background:var(--surface2)}
+/* CONTENT */
+.content{padding:20px 22px;flex:1;overflow-y:auto}
+.sec{display:none}.sec.active{display:block}
+/* METRIC CARDS */
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:9px;margin-bottom:16px}
+.mc{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:12px 14px}
+.mc .l{font-size:10px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em;font-family:'DM Mono',monospace}
+.mc .v{font-size:23px;font-weight:500;line-height:1.1}
+.mc .s{font-size:11px;color:var(--hint);margin-top:2px}
+.mc.up .v{color:var(--green)}.mc.dn .v{color:var(--red)}
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:15px 17px;margin-bottom:13px}
+.ct{font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:11px;font-family:'DM Mono',monospace;display:flex;align-items:center;gap:5px}
+.ct i{font-size:14px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:13px}
+/* RANKING */
+.rl{list-style:none}
+.ri{display:flex;align-items:center;gap:7px;padding:6px 0;border-bottom:1px solid var(--border)}
+.ri:last-child{border-bottom:none}
+.rn{font-size:11px;color:var(--hint);width:14px;font-family:'DM Mono',monospace}
+.rname{font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rbar{width:68px;height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;flex-shrink:0}
+.rbar-f{height:100%;border-radius:2px}
+.rv{font-size:12px;font-weight:500;width:24px;text-align:right;font-family:'DM Mono',monospace;flex-shrink:0}
+.zb{font-size:10px;background:var(--red-l);color:var(--red);padding:1px 5px;border-radius:4px;font-family:'DM Mono',monospace}
+/* TABLE */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:7px 8px;font-size:10px;font-weight:500;color:var(--muted);border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.04em;font-family:'DM Mono',monospace;white-space:nowrap}
+td{padding:8px 8px;border-bottom:1px solid var(--border);color:var(--text)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface2)}
+.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:500;font-family:'DM Mono',monospace}
+.bok{background:var(--green-l);color:var(--green)}.bwn{background:var(--amber-l);color:var(--amber)}.bbd{background:var(--red-l);color:var(--red)}
+/* FORM */
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.fi{display:flex;flex-direction:column;gap:3px}
+.fi label{font-size:10px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-family:'DM Mono',monospace}
+.fi input,.fi select,.fi textarea{width:100%;padding:8px 10px;font-size:13px;border:1px solid var(--border-s);border-radius:var(--r);background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;transition:border-color .15s}
+.fi input:focus,.fi select:focus,.fi textarea:focus{outline:none;border-color:var(--accent)}
+.fi textarea{resize:vertical;min-height:54px}
+.fc{grid-column:1/-1}
+.bp{background:var(--accent);color:#fff;border:none;border-radius:var(--r);padding:9px 17px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;display:inline-flex;align-items:center;gap:6px}
+.bp:hover{opacity:.86}.bp:disabled{opacity:.5;cursor:not-allowed}
+.bs{background:transparent;border:1px solid var(--border-s);border-radius:var(--r);padding:8px 13px;font-size:13px;color:var(--text);cursor:pointer;font-family:'DM Sans',sans-serif;display:inline-flex;align-items:center;gap:6px}
+.bs:hover{background:var(--surface2)}
+.bd{background:transparent;border:1px solid var(--red-l);color:var(--red);border-radius:var(--r);padding:4px 8px;font-size:11px;cursor:pointer}
+.bd:hover{background:var(--red-l)}
+/* VSEL */
+.vsel{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:11px}
+.vb{padding:4px 11px;font-size:12px;border:1px solid var(--border-s);border-radius:20px;cursor:pointer;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;transition:all .15s}
+.vb:hover{border-color:var(--accent);color:var(--text)}
+.vb.sel{background:var(--accent);color:#fff;border-color:var(--accent)}
+/* LEGEND */
+.leg{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px}
+.leg span{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);font-family:'DM Mono',monospace}
+.lsq{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+/* MISC */
+.empty{text-align:center;padding:2rem;color:var(--hint);font-size:13px}
+.spinner{display:inline-block;width:11px;height:11px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:18px;right:18px;background:var(--accent);color:#fff;padding:9px 15px;border-radius:var(--r);font-size:13px;font-family:'DM Sans',sans-serif;opacity:0;transition:opacity .25s;pointer-events:none;z-index:999;display:flex;align-items:center;gap:6px}
+.toast.show{opacity:1}
+/* MOBILE */
+.mob{display:none;background:var(--surface);border-bottom:1px solid var(--border);padding:0 10px;overflow-x:auto}
+.mob-inner{display:flex;gap:2px;min-width:max-content}
+.mb{background:transparent;border:none;border-bottom:2px solid transparent;padding:9px 11px;font-size:12px;color:var(--muted);cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;display:flex;align-items:center;gap:5px}
+.mb.active{color:var(--text);border-bottom-color:var(--accent);font-weight:500}
+.cup{color:var(--green);font-weight:500}.cdn{color:var(--red);font-weight:500}.cne{color:var(--hint)}
+@media(max-width:768px){.sb{display:none}.mob{display:block}.content{padding:13px}.topbar{padding:9px 13px}.two{grid-template-columns:1fr}.fg{grid-template-columns:1fr}.fc{grid-column:1}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sb">
+    <div class="sb-logo">
+      <h1>Controle Semanal<br>Equipe CNC</h1>
+      <p>OCC Soluções</p>
+    </div>
+    <ul class="nav">
+      <li><button class="nb active" onclick="go('dashboard',this)"><i class="ti ti-layout-dashboard"></i> Dashboard</button></li>
+      <li><button class="nb" onclick="go('evolucao',this)"><i class="ti ti-trending-up"></i> Evolução</button></li>
+      <li><button class="nb" onclick="go('comparativo',this)"><i class="ti ti-arrows-diff"></i> Comparativo</button></li>
+      <li><button class="nb" onclick="go('registro',this)"><i class="ti ti-edit"></i> Registrar</button></li>
+      <li><button class="nb" onclick="go('historico',this)"><i class="ti ti-history"></i> Histórico</button></li>
+    </ul>
+  </aside>
+
+  <div class="main">
+    <nav class="mob">
+      <div class="mob-inner">
+        <button class="mb active" onclick="go('dashboard',this)"><i class="ti ti-layout-dashboard"></i> Dashboard</button>
+        <button class="mb" onclick="go('evolucao',this)"><i class="ti ti-trending-up"></i> Evolução</button>
+        <button class="mb" onclick="go('comparativo',this)"><i class="ti ti-arrows-diff"></i> Comparativo</button>
+        <button class="mb" onclick="go('registro',this)"><i class="ti ti-edit"></i> Registrar</button>
+        <button class="mb" onclick="go('historico',this)"><i class="ti ti-history"></i> Histórico</button>
+      </div>
+    </nav>
+
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span id="week-info" style="font-size:13px;color:var(--muted)">Carregando...</span>
+        <span class="sync loading" id="sync"><span class="spinner"></span> conectando</span>
+      </div>
+      <div class="wnav">
+        <button onclick="chgWeek(-1)"><i class="ti ti-chevron-left"></i></button>
+        <span class="wlbl" id="wlbl">—</span>
+        <button onclick="chgWeek(1)"><i class="ti ti-chevron-right"></i></button>
+        <button style="font-size:11px;color:var(--muted)" onclick="chgWeek(0)">Hoje</button>
+        <button style="font-size:11px" onclick="reload()" title="Atualizar dados"><i class="ti ti-refresh"></i></button>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- DASHBOARD -->
+      <div id="sec-dashboard" class="sec active">
+        <div class="metrics" id="m-row"></div>
+        <div class="two">
+          <div class="card"><div class="ct"><i class="ti ti-trophy"></i> Ranking — visitas</div><ul class="rl" id="rvis"></ul></div>
+          <div class="card"><div class="ct"><i class="ti ti-building-store"></i> Ranking — oportunidades</div><ul class="rl" id="ropp"></ul></div>
+        </div>
+        <div class="card">
+          <div class="ct"><i class="ti ti-target"></i> Meta vs. realizado</div>
+          <div class="leg"><span><span class="lsq" style="background:#bfdbfe;border:1px dashed #1a56db"></span>Meta</span><span><span class="lsq" style="background:#0e7c4a"></span>Realizado</span></div>
+          <div style="position:relative;width:100%;height:190px"><canvas id="barChart" role="img" aria-label="Meta vs realizado por vendedor">Gráfico.</canvas></div>
+        </div>
+        <div class="card">
+          <div class="ct"><i class="ti ti-users"></i> Resumo completo da semana</div>
+          <div class="tw"><table style="min-width:560px">
+            <thead><tr><th>Vendedor</th><th>Visitas</th><th>Oport.</th><th>Meta (R$)</th><th>Realizado (R$)</th><th>%</th><th>Próxima ação</th></tr></thead>
+            <tbody id="ttbody"></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- EVOLUÇÃO -->
+      <div id="sec-evolucao" class="sec">
+        <div class="card"><div class="ct"><i class="ti ti-user"></i> Vendedor</div><div class="vsel" id="vsel"></div></div>
+        <div class="card">
+          <div class="ct" id="et1">Visitas e oportunidades</div>
+          <div class="leg"><span><span class="lsq" style="background:#1a56db"></span>Visitas</span><span><span class="lsq" style="background:#0e7c4a"></span>Oportunidades</span></div>
+          <div style="position:relative;width:100%;height:210px"><canvas id="ec1" role="img" aria-label="Evolução semanal">Gráfico.</canvas></div>
+        </div>
+        <div class="card">
+          <div class="ct" id="et2">Meta vs. realizado (R$)</div>
+          <div class="leg"><span><span class="lsq" style="background:#bfdbfe;border:1px dashed #1a56db"></span>Meta</span><span><span class="lsq" style="background:#0e7c4a"></span>Realizado</span></div>
+          <div style="position:relative;width:100%;height:210px"><canvas id="ec2" role="img" aria-label="Evolução semanal meta">Gráfico.</canvas></div>
+        </div>
+      </div>
+
+      <!-- COMPARATIVO -->
+      <div id="sec-comparativo" class="sec">
+        <div class="card"><div class="ct"><i class="ti ti-arrows-diff"></i> Semana atual vs. semana anterior</div><div id="comp"></div></div>
+      </div>
+
+      <!-- REGISTRO -->
+      <div id="sec-registro" class="sec">
+        <div class="card">
+          <div class="ct"><i class="ti ti-edit"></i> Novo registro semanal</div>
+          <div class="fg">
+            <div class="fi"><label>Vendedor</label>
+              <select id="fv"><option value="">Selecione...</option>
+                <option>Odirlei Costa</option><option>Alexandre Dahmer</option><option>Willian Rosa</option>
+                <option>Leandro Prada</option><option>Sérgio Nunes</option><option>Anderson Canhola</option>
+                <option>Lauro Junior</option><option>Victor Cestari</option><option>Felipe Rocha</option>
+              </select>
+            </div>
+            <div class="fi"><label>Semana (segunda-feira)</label><input type="date" id="fsem"></div>
+            <div class="fi"><label>Visitas realizadas</label><input type="number" id="fvis" min="0" placeholder="0"></div>
+            <div class="fi"><label>Oportunidades abertas</label><input type="number" id="fopp" min="0" placeholder="0"></div>
+            <div class="fi"><label>Meta de venda (R$)</label><input type="number" id="fmeta" min="0" placeholder="0"></div>
+            <div class="fi"><label>Realizado (R$)</label><input type="number" id="freal" min="0" placeholder="0"></div>
+            <div class="fi fc"><label>Próxima ação planejada</label><input type="text" id="facao" placeholder="Ex: visitar cliente X, enviar proposta para Y..."></div>
+            <div class="fi fc"><label>Observação</label><textarea id="fobs" placeholder="Ex: semana de visitas técnicas, retomada de negociação..."></textarea></div>
+          </div>
+          <div style="display:flex;gap:9px;margin-top:4px;flex-wrap:wrap">
+            <button class="bp" id="btsalvar" onclick="salvar()"><i class="ti ti-device-floppy"></i> Salvar registro</button>
+            <button class="bs" onclick="limpar()"><i class="ti ti-x"></i> Limpar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- HISTÓRICO -->
+      <div id="sec-historico" class="sec">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:9px;margin-bottom:11px">
+          <span style="font-size:15px;font-weight:500">Histórico de registros</span>
+          <button class="bs" onclick="exportCSV()"><i class="ti ti-download"></i> Exportar CSV</button>
+        </div>
+        <div class="card" id="hist"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><i class="ti ti-check"></i><span id="tmsg"></span></div>
+
+<script>
+const SB_URL='https://ormuiexllahupkjrhgko.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ybXVpZXhsbGFodXBranJoZ2tvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwNTcxNjMsImV4cCI6MjA2ODYzMzE2M30.Mj7yCRQ50DTPSNI0J6bBjmEmuCSHZ0UwHVcIp5dW8Bw';
+const TBL='controle_semanal';
+const VENDS=['Odirlei Costa','Alexandre Dahmer','Willian Rosa','Leandro Prada','Sérgio Nunes','Anderson Canhola','Lauro Junior','Victor Cestari','Felipe Rocha'];
+
+let rows=[],wOff=0,barCI=null,e1=null,e2=null,eVend=VENDS[0],curTab='dashboard';
+
+async function api(path,opts={}){
+  const r=await fetch(SB_URL+'/rest/v1/'+path,{
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation',...(opts.headers||{})},
+    ...opts
+  });
+  if(!r.ok)throw new Error(await r.text());
+  const ct=r.headers.get('content-type')||'';
+  return ct.includes('json')?r.json():[];
+}
+
+function badge(state){
+  const el=document.getElementById('sync');
+  if(state==='ok'){el.className='sync ok';el.innerHTML='<i class="ti ti-cloud-check"></i> sincronizado'}
+  else if(state==='err'){el.className='sync err';el.innerHTML='<i class="ti ti-cloud-off"></i> offline'}
+  else{el.className='sync loading';el.innerHTML='<span class="spinner"></span> sincronizando'}
+}
+
+async function load(){
+  badge('loading');
+  try{rows=await api(TBL+'?select=*&order=semana.desc');badge('ok')}
+  catch(e){badge('err');console.error(e)}
+  updWeek();prefDate();buildVsel();render();
+}
+async function reload(){await load();renderTab();toast('Dados atualizados!')}
+
+function mon(d){const dt=new Date(d);const dy=dt.getDay();dt.setDate(dt.getDate()-dy+(dy===0?-6:1));dt.setHours(0,0,0,0);return dt}
+function wkey(d){return mon(d).toISOString().slice(0,10)}
+function cws(){const m=mon(new Date());m.setDate(m.getDate()+wOff*7);return m}
+function fmtW(d){const m=new Date(d);const e=new Date(m);e.setDate(e.getDate()+6);const o={day:'2-digit',month:'2-digit'};return m.toLocaleDateString('pt-BR',o)+' – '+e.toLocaleDateString('pt-BR',o)}
+function fmtM(v){return Number(v).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0})}
+function pbadge(p){return`<span class="badge ${p>=100?'bok':p>=60?'bwn':'bbd'}">${p}%</span>`}
+function toast(m){document.getElementById('tmsg').textContent=m;const t=document.getElementById('toast');t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+function updWeek(){const ws=cws();const lb=fmtW(ws);document.getElementById('wlbl').textContent=lb;document.getElementById('week-info').textContent='Semana de '+lb}
+function prefDate(){const el=document.getElementById('fsem');if(el)el.value=cws().toISOString().slice(0,10)}
+function wd(extra=0){const b=new Date(cws());if(extra)b.setDate(b.getDate()+extra);const k=wkey(b);return rows.filter(r=>wkey(new Date(r.semana+'T12:00:00'))===k)}
+function chgWeek(d){wOff=d===0?0:wOff+d;updWeek();render()}
+
+function go(id,el){
+  curTab=id;
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nb,.mb').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  document.querySelectorAll(`[onclick="go('${id}',this)"]`).forEach(b=>b.classList.add('active'));
+  renderTab();
+}
+function renderTab(){if(curTab==='historico')renderHist();else if(curTab==='evolucao')renderEvo();else if(curTab==='comparativo')renderComp();else render()}
+
+function render(){
+  const w=wd(),pv=wd(-7);
+  const tv=w.reduce((a,b)=>a+(+b.visitas||0),0);
+  const to=w.reduce((a,b)=>a+(+b.opp||0),0);
+  const tm=w.reduce((a,b)=>a+(+b.meta||0),0);
+  const tr=w.reduce((a,b)=>a+(+b.realizado||0),0);
+  const pct=tm>0?Math.round(tr/tm*100):0;
+  const pr=pv.reduce((a,b)=>a+(+b.realizado||0),0);
+  const df=tr-pr;const dfs=df>0?'▲ R$'+fmtM(df):df<0?'▼ R$'+fmtM(Math.abs(df)):'= igual';
+  document.getElementById('m-row').innerHTML=`
+    <div class="mc"><div class="l">Visitas</div><div class="v">${tv}</div><div class="s">equipe completa</div></div>
+    <div class="mc"><div class="l">Oportunidades</div><div class="v">${to}</div><div class="s">na semana</div></div>
+    <div class="mc"><div class="l">% Meta</div><div class="v">${pct}%</div><div class="s">R$${fmtM(tr)} / R$${fmtM(tm)}</div></div>
+    <div class="mc ${df>0?'up':df<0?'dn':''}"><div class="l">vs. semana ant.</div><div class="v">${df===0?'—':dfs}</div><div class="s">realizado</div></div>
+    <div class="mc"><div class="l">Registros</div><div class="v">${w.length}/9</div><div class="s">vendedores</div></div>`;
+  rnk('rvis',w,'visitas','#1a56db');rnk('ropp',w,'opp','#0e7c4a');
+  barC(w);teamT(w);
+}
+
+function rnk(id,data,f,color){
+  const s=[...data].sort((a,b)=>(+b[f]||0)-(+a[f]||0));
+  const mx=s.length?(+s[0][f]||0):1;
+  const el=document.getElementById(id);
+  if(!data.length){el.innerHTML='<li class="ri"><span class="rname" style="color:var(--hint)">Sem dados nesta semana</span></li>';return}
+  el.innerHTML=s.map((r,i)=>{const v=+r[f]||0;const p=mx>0?Math.round(v/mx*100):0;return`<li class="ri"><span class="rn">${i+1}</span><span class="rname">${r.vendedor.split(' ')[0]}</span><div class="rbar"><div class="rbar-f" style="width:${p}%;background:${color}"></div></div><span class="rv">${v}</span>${v===0?'<span class="zb">Zero</span>':''}</li>`;}).join('')
+}
+
+function barC(data){
+  const ctx=document.getElementById('barChart').getContext('2d');
+  if(barCI)barCI.destroy();if(!data.length)return;
+  barCI=new Chart(ctx,{type:'bar',data:{labels:data.map(r=>r.vendedor.split(' ')[0]),datasets:[{label:'Meta',data:data.map(r=>+r.meta||0),backgroundColor:'rgba(191,219,254,0.5)',borderColor:'#1a56db',borderWidth:1.5,borderDash:[5,4]},{label:'Realizado',data:data.map(r=>+r.realizado||0),backgroundColor:'#0e7c4a',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'R$'+fmtM(v),font:{size:10,family:'DM Mono'}},grid:{color:'rgba(0,0,0,0.05)'}},x:{ticks:{font:{size:11}},grid:{display:false}}}}})
+}
+
+function teamT(data){
+  document.getElementById('ttbody').innerHTML=VENDS.map(v=>{
+    const r=data.find(d=>d.vendedor===v);
+    if(!r)return`<tr><td>${v}</td><td colspan="6" style="color:var(--hint);font-size:11px">— sem registro —</td></tr>`;
+    const m=+r.meta||0,rl=+r.realizado||0,p=m>0?Math.round(rl/m*100):0;
+    return`<tr><td>${v}</td><td>${r.visitas||0}</td><td>${r.opp||0}</td><td>R$ ${fmtM(m)}</td><td>R$ ${fmtM(rl)}</td><td>${pbadge(p)}</td><td style="font-size:11px;color:var(--muted);max-width:140px;white-space:normal">${r.acao||'—'}</td></tr>`;
+  }).join('')
+}
+
+function buildVsel(){
+  document.getElementById('vsel').innerHTML=VENDS.map((v,i)=>`<button class="vb${i===0?' sel':''}" onclick="selV('${v}',this)">${v.split(' ')[0]}</button>`).join('')
+}
+function selV(v,el){eVend=v;document.querySelectorAll('.vb').forEach(b=>b.classList.remove('sel'));el.classList.add('sel');renderEvo()}
+
+function renderEvo(){
+  const wks=[...new Set(rows.map(r=>wkey(new Date(r.semana+'T12:00:00'))))].sort();
+  const labs=wks.map(wk=>fmtW(new Date(wk+'T12:00:00')).split(' – ')[0]);
+  const vd=wks.map(wk=>rows.find(d=>d.vendedor===eVend&&wkey(new Date(d.semana+'T12:00:00'))===wk)||null);
+  document.getElementById('et1').textContent=eVend.split(' ')[0]+' — visitas e oportunidades';
+  document.getElementById('et2').textContent=eVend.split(' ')[0]+' — meta vs. realizado (R$)';
+  const c1=document.getElementById('ec1').getContext('2d');
+  const c2=document.getElementById('ec2').getContext('2d');
+  if(e1)e1.destroy();if(e2)e2.destroy();if(!wks.length)return;
+  const bo={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}};
+  e1=new Chart(c1,{type:'line',data:{labels:labs,datasets:[{label:'Visitas',data:vd.map(r=>r?+r.visitas||0:null),borderColor:'#1a56db',backgroundColor:'rgba(26,86,219,0.06)',tension:.3,spanGaps:true,pointRadius:4,pointBackgroundColor:'#1a56db'},{label:'Opp',data:vd.map(r=>r?+r.opp||0:null),borderColor:'#0e7c4a',backgroundColor:'rgba(14,124,74,0.06)',tension:.3,spanGaps:true,pointRadius:4,pointBackgroundColor:'#0e7c4a'}]},options:{...bo,scales:{x:{ticks:{font:{size:10},maxRotation:30}},y:{ticks:{font:{size:10}},grid:{color:'rgba(0,0,0,0.05)'}}}}});
+  e2=new Chart(c2,{type:'line',data:{labels:labs,datasets:[{label:'Meta',data:vd.map(r=>r?+r.meta||0:null),borderColor:'#1a56db',borderDash:[5,4],backgroundColor:'transparent',tension:.3,spanGaps:true,pointRadius:3,pointBackgroundColor:'#1a56db'},{label:'Real',data:vd.map(r=>r?+r.realizado||0:null),borderColor:'#0e7c4a',backgroundColor:'rgba(14,124,74,0.06)',tension:.3,spanGaps:true,pointRadius:4,pointBackgroundColor:'#0e7c4a'}]},options:{...bo,scales:{x:{ticks:{font:{size:10},maxRotation:30}},y:{ticks:{callback:v=>'R$'+fmtM(v),font:{size:10}},grid:{color:'rgba(0,0,0,0.05)'}}}}});
+}
+
+function renderComp(){
+  const cur=wd(),prv=wd(-7);
+  const el=document.getElementById('comp');
+  if(!cur.length&&!prv.length){el.innerHTML='<div class="empty">Sem dados para comparar. Registre ao menos duas semanas.</div>';return}
+  const trs=VENDS.map(v=>{
+    const c=cur.find(r=>r.vendedor===v),p=prv.find(r=>r.vendedor===v);
+    const cv=+c?.visitas||0,pv=+p?.visitas||0;
+    const co=+c?.opp||0,po=+p?.opp||0;
+    const cr=+c?.realizado||0,pr=+p?.realizado||0;
+    const ar=(d,cv)=>{const cl=d>0?'cup':d<0?'cdn':'cne';return`<span class="${cl}">${d>0?'▲':d<0?'▼':'='} ${cv}</span>`};
+    return`<tr><td>${v}</td><td style="text-align:center">${ar(cv-pv,cv)}</td><td style="text-align:center">${ar(co-po,co)}</td><td style="text-align:center">${ar(cr-pr,'R$'+fmtM(cr))}</td></tr>`;
+  });
+  el.innerHTML=`<p style="font-size:11px;color:var(--hint);margin-bottom:10px;font-family:'DM Mono',monospace">▲ melhorou &nbsp;▼ caiu &nbsp;= igual — em relação à semana anterior</p>
+  <div class="tw"><table><thead><tr><th>Vendedor</th><th style="text-align:center">Visitas</th><th style="text-align:center">Oport.</th><th style="text-align:center">Realizado</th></tr></thead><tbody>${trs.join('')}</tbody></table></div>`;
+}
+
+async function salvar(){
+  const v=document.getElementById('fv').value;
+  const sem=document.getElementById('fsem').value;
+  if(!v||!sem){toast('Preencha vendedor e semana!');return}
+  const btn=document.getElementById('btsalvar');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Salvando...';
+  const rec={vendedor:v,semana:sem,visitas:+document.getElementById('fvis').value||0,opp:+document.getElementById('fopp').value||0,meta:+document.getElementById('fmeta').value||0,realizado:+document.getElementById('freal').value||0,acao:document.getElementById('facao').value||null,obs:document.getElementById('fobs').value||null,updated_at:new Date().toISOString()};
+  try{
+    await api(TBL,{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=representation'},body:JSON.stringify(rec)});
+    await load();toast('Salvo no Supabase!');limpar();
+  }catch(e){toast('Erro ao salvar. Verifique conexão.');console.error(e)}
+  btn.disabled=false;btn.innerHTML='<i class="ti ti-device-floppy"></i> Salvar registro';
+}
+
+function limpar(){['fv','fvis','fopp','fmeta','freal','facao','fobs'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});prefDate()}
+
+function renderHist(){
+  const el=document.getElementById('hist');
+  if(!rows.length){el.innerHTML='<div class="empty">Nenhum registro ainda.</div>';return}
+  el.innerHTML=`<div class="tw"><table style="min-width:640px">
+  <thead><tr><th>Vendedor</th><th>Semana</th><th>Vis.</th><th>Opp.</th><th>Meta</th><th>Realizado</th><th>%</th><th>Próx. ação</th><th></th></tr></thead>
+  <tbody>${rows.map(r=>{const p=+r.meta>0?Math.round(+r.realizado/+r.meta*100):0;return`<tr><td>${r.vendedor}</td><td style="font-family:'DM Mono',monospace;font-size:11px">${fmtW(new Date(r.semana+'T12:00:00'))}</td><td>${r.visitas}</td><td>${r.opp}</td><td>R$${fmtM(r.meta)}</td><td>R$${fmtM(r.realizado)}</td><td>${pbadge(p)}</td><td style="font-size:11px;color:var(--muted);white-space:normal;max-width:130px">${r.acao||'—'}</td><td><button class="bd" onclick="del('${r.id}')"><i class="ti ti-trash"></i></button></td></tr>`;}).join('')}</tbody>
+  </table></div>`;
+}
+
+async function del(id){
+  if(!confirm('Remover este registro do banco de dados?'))return;
+  try{await api(TBL+'?id=eq.'+id,{method:'DELETE'});await load();renderHist();toast('Registro removido.')}
+  catch(e){toast('Erro ao remover.')}
+}
+
+function exportCSV(){
+  if(!rows.length){toast('Nenhum dado para exportar.');return}
+  const h='Vendedor,Semana,Visitas,Oportunidades,Meta (R$),Realizado (R$),% Meta,Próxima Ação,Observação';
+  const rs=rows.map(r=>{const p=+r.meta>0?Math.round(+r.realizado/+r.meta*100):0;return[r.vendedor,r.semana,r.visitas,r.opp,r.meta,r.realizado,p+'%',r.acao||'',r.obs||''].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')});
+  const csv='\uFEFF'+h+'\n'+rs.join('\n');
+  const b=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='equipe_cnc_'+new Date().toISOString().slice(0,10)+'.csv';a.click();URL.revokeObjectURL(u);
+  toast('CSV exportado!');
+}
+
+load();
+</script>
+</body>
+</html>
