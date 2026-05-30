@@ -692,7 +692,7 @@ async function salvarMetaVis(){
   const v=parseInt(document.getElementById('meta-vis-input').value)||5;
   metaVis=v;
   try{
-    await api('config',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify({key:'meta_visitas_semana',value:String(v),updated_at:new Date().toISOString()})});
+    await api('config',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=representation'},body:JSON.stringify({key:'meta_visitas_semana',value:String(v),updated_at:new Date().toISOString()})});
     toast('Meta de visitas atualizada!');renderVisitas();
   }catch(e){toast('Erro ao salvar meta.',true)}
 }
@@ -705,7 +705,7 @@ async function salvarVis(){
   btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Salvando...';
   const rec={vendedor:v,semana:sem,visitas:+document.getElementById('fvisqtd').value||0,meta:metaVis,obs:document.getElementById('fvisobs').value||null,updated_at:new Date().toISOString()};
   try{
-    await api('visitas_semanal',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify(rec)});
+    await api('visitas_semanal',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=representation'},body:JSON.stringify(rec)});
     await loadAll();toast('Visitas salvas!');limparVis();
   }catch(e){toast('Erro ao salvar.',true);console.error(e)}
   btn.disabled=false;btn.innerHTML='<i class="ti ti-device-floppy"></i> Salvar';
@@ -771,7 +771,7 @@ async function salvar(){
   btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Salvando...';
   const rec={vendedor:v,semana:sem,visitas:+document.getElementById('fvis2').value||0,opp:+document.getElementById('fopp').value||0,meta:+document.getElementById('fmeta').value||0,realizado:+document.getElementById('freal').value||0,acao:document.getElementById('facao').value||null,obs:document.getElementById('fobs').value||null,updated_at:new Date().toISOString()};
   try{
-    await api('controle_semanal',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates'},body:JSON.stringify(rec)});
+    await api('controle_semanal',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=representation'},body:JSON.stringify(rec)});
     await loadAll();toast('Registro salvo!');limpar();
   }catch(e){toast('Erro ao salvar.',true);console.error(e)}
   btn.disabled=false;btn.innerHTML='<i class="ti ti-device-floppy"></i> Salvar registro';
